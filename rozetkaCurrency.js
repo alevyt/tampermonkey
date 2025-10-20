@@ -1,18 +1,16 @@
 // ==UserScript==
-// @name         Rozetka currency switcher
+// @name         New Userscript
 // @namespace    http://tampermonkey.net/
-// @version      0.1
-// @description  usd/uah currency switcher for rozetka
-// @author       Andrii Levytskyi
-// @match        https://rozetka.com.ua/*
+// @version      2025-10-20
+// @description  try to take over the world!
+// @author       You
+// @match        https://hard.rozetka.com.ua/ua/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=rozetka.com.ua
 // @grant        none
 // ==/UserScript==
 
-
 (function() {
     'use strict';
-
-    let exchangeRateURL = 'https://api.exchangerate.host/latest?base=USD&symbols=UAH';
 
     const currencyButton = document.createElement('button');
     currencyButton.id = 'currencyButton';
@@ -30,6 +28,18 @@
     }
     // **********
 
+    async function getUsdExchangeRate() {
+        try {
+            fetch('https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5')
+  .then(response => console.log('345',response)) // convert to JS object
+  //.then(data => console.log(data))    // use the data
+  .catch(error => console.error('Error:', error)); // handle errors
+        } catch (error) {
+            console.error('Error fetching exchange rate:', error);
+            return null;
+        }
+    }
+
 
 
     document.getElementsByTagName('head')[0].appendChild(style);
@@ -46,19 +56,15 @@
         padding: 5px 10px;
     `;
 
-    let currencyExchangeRate = 0
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            currencyExchangeRate = JSON.parse(xmlHttp.responseText).rates.UAH;
-    }
-    xmlHttp.open("GET", exchangeRateURL, true); // true for asynchronous 
-    xmlHttp.send(null);
+    let currencyExchangeRate = 41.95; //setting 41.95 as default value (21.10.2025)
 
     let changePrice = function(element){
-        // console.log(element.innerText);
-        let num = element.innerText.replace( /^\D+/g, '') * (currency == 'UAH' ? currencyExchangeRate : 1/currencyExchangeRate);
-        element.innerText = num;    
+        console.log(element.innerText);
+        const rawText = element.innerText || '';
+        const numericValue = parseFloat(rawText.replace(/[^\d.]/g, '')) || 0;
+        const roundedValue = Math.round(numericValue);
+        let num = roundedValue * (currency == 'UAH' ? currencyExchangeRate : 1/currencyExchangeRate);
+        element.innerText = num;
     }
 
     let clickHandler = function (ev) {
@@ -66,14 +72,15 @@
         currencySymbol = currency == 'UAH'? '₴' : '$';
         this.innerHTML = currency;
 
-        let pricetags = document.querySelectorAll('.goods-tile__price-value, .product-prices__big, .promo-label__round-price');
-        let currencyTags = document.querySelectorAll('.goods-tile__price-currency');
+        let pricetags = document.querySelectorAll('div.price');
+        let currencyTags = document.querySelectorAll('div.price span');
+        console.log('123', currencyExchangeRate);
 
         pricetags.forEach(changePrice);
         currencyTags.forEach((element) => {
             element.innterText = currencySymbol;
         })
-        
+
     }
 
     currencyButton.addEventListener('click', clickHandler);
